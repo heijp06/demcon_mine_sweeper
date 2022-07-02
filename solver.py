@@ -14,9 +14,10 @@ class Solver:
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
 
     def sweep(self) -> str:
-        column, row = self.width // 2, self.height // 2
+        column, row = (self.width - 1) // 2, (self.height - 1) // 2
         if self.grid[row][column] == UNKNOWN:
             mines = self.mine_field.sweep_cell(column, row)
             self.grid[row][column] = mines
-            return f"First try: ({column}, {row}) is surrounded by {mines} mine{mines != 1 and 's' or ''}."
+            plural = 's' if mines != 1 else ''
+            return f"Sweep middle cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
         pass
