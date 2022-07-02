@@ -10,6 +10,8 @@ def print_grid(grid: list[list[int]]) -> None:
                 print('*', end='')
             elif column == UNKNOWN:
                 print('.', end='')
+            elif column == 0:
+                print(' ', end='')
             else:
                 print(str(column), end='')
         print()
