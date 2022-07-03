@@ -41,7 +41,7 @@ class Solver:
             if mines == self.grid[row][column]:
                 for (r, c) in unknowns:
                     self.grid[r][c] = self.mine_field.sweep_cell(c, r)
-                return f"Clear all cells around ({row}, {column}) because all the mines there are found."
+                return f"Clear all cells around ({column}, {row}) because all the mines there are found."
         return None
 
     def sweep_middle_cell(self) -> str:

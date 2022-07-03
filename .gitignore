@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Temporary output file.
+out.txt
+
+# Vim swap file
+*.swp
