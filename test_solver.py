@@ -1,6 +1,8 @@
+from decimal import MIN_EMIN
+import pytest
 from unittest.mock import call, MagicMock
 from mineField import MineField
-from solver import UNKNOWN, Solver
+from solver import MINE, UNKNOWN, Solver
 
 
 def test_sweep_middle_cell():
@@ -10,15 +12,22 @@ def test_sweep_middle_cell():
     assert_cells_swept(solver, [(1, 1)])
 
 
-def test_sweep_cells_for_which_all_mines_are_found():
-    solver = Solver(3, 2, 1)
-    solver.mine_field = MagicMock(spec=MineField)
-    solver.grid = [
+@pytest.mark.parametrize("grid,cells", [
+    ([
         [0, UNKNOWN, UNKNOWN],
-        [UNKNOWN, UNKNOWN, UNKNOWN],
-    ]
+        [UNKNOWN, UNKNOWN, UNKNOWN]], [(1, 0), (0, 1), (1, 1)]),
+    ([
+        [1, MINE, UNKNOWN],
+        [UNKNOWN, UNKNOWN, UNKNOWN]], [(0, 1), (1, 1)])
+])
+def test_sweep_cells_for_which_all_mines_are_found(grid, cells):
+    width = len(grid[0])
+    height = len(grid)
+    solver = Solver(width, height, 2)
+    solver.mine_field = MagicMock(spec=MineField)
+    solver.grid = grid
     solver.sweep_cells_for_which_all_mines_are_found()
-    assert_cells_swept(solver, [(1, 0), (0, 1), (1, 1)])
+    assert_cells_swept(solver, cells)
 
 
 def assert_cells_swept(solver: Solver, cells: list[tuple[int, int]]) -> None:
