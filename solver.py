@@ -1,3 +1,4 @@
+from typing import Optional
 import mineField as mf
 
 UNKNOWN = -1
@@ -14,7 +15,8 @@ class Solver:
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
             self.sweep_middle_cell,
-            self.sweep_cells_for_which_all_mines_are_found
+            self.sweep_cells_for_which_all_mines_are_found,
+            self.mark_mines_if_sum_of_adjacent_mines_and_unknowns_equals_cell_value
         ]
 
     def sweep(self) -> str:
@@ -23,28 +25,21 @@ class Solver:
             if result:
                 return result
 
-    def sweep_cells_for_which_all_mines_are_found(self) -> str:
+    def sweep_cells_for_which_all_mines_are_found(self) -> Optional[str]:
         for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
             if self.grid[row][column] in (UNKNOWN, MINE):
                 continue
-            unknowns = [
-                (r, c)
-                for (r, c) in self.neighbours(row, column)
-                if self.grid[r][c] == UNKNOWN
-            ]
+            unknowns = self.get_adjacent_cells(row, column, UNKNOWN)
             if not unknowns:
                 continue
-            mines = sum(
-                self.grid[r][c] == MINE
-                for (r, c) in self.neighbours(row, column)
-            )
-            if mines == self.grid[row][column]:
+            mines = self.get_adjacent_cells(row, column, MINE)
+            if len(mines) == self.grid[row][column]:
                 for (r, c) in unknowns:
                     self.grid[r][c] = self.mine_field.sweep_cell(c, r)
                 return f"Clear all cells around ({column}, {row}) because all the mines there are found."
         return None
 
-    def sweep_middle_cell(self) -> str:
+    def sweep_middle_cell(self) -> Optional[str]:
         column, row = (self.width - 1) // 2, (self.height - 1) // 2
         if self.grid[row][column] != UNKNOWN:
             return None
@@ -53,7 +48,22 @@ class Solver:
         plural = 's' if mines != 1 else ''
         return f"Sweep middle cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
 
-    def neighbours(self, row: int, column: int) -> list[tuple[int, int]]:
+    def mark_mines_if_sum_of_adjacent_mines_and_unknowns_equals_cell_value(self) -> Optional[str]:
+        for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
+            cell_value = self.grid[row][column]
+            if cell_value in (UNKNOWN, MINE):
+                continue
+            unknowns = self.get_adjacent_cells(row, column, UNKNOWN)
+            if not unknowns:
+                continue
+            mines = self.get_adjacent_cells(row, column, MINE)
+            if len(unknowns) + len(mines) == cell_value:
+                for r, c in unknowns:
+                    self.grid[r][c] = MINE
+                return f"Mark all unknown cells around ({column}, {row}) as mine to get to a total of {cell_value}."
+        return None
+
+    def get_adjacent_cells(self, row, column, cell_type=None) -> list[tuple[int, int]]:
         return [
             (row + dr, column + dc)
             for dr in [-1, 0, 1]
@@ -61,4 +71,5 @@ class Solver:
             if (dr, dc) != (0, 0)
             and 0 <= row + dr < self.height
             and 0 <= column + dc < self.width
+            and (cell_type is None or self.grid[row + dr][column + dc] == cell_type)
         ]
