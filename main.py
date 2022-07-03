@@ -28,4 +28,7 @@ while result:
     print(result)
     print_grid(solver.grid)
     result = solver.sweep()
-
+    mines = solver.mines_found()
+    if len(mines) == solver.number_of_mines:
+        print(f"Solved, mines are at {mines}.")
+        break

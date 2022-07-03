@@ -73,3 +73,11 @@ class Solver:
             and 0 <= column + dc < self.width
             and (cell_type is None or self.grid[row + dr][column + dc] == cell_type)
         ]
+
+    def mines_found(self) -> list[tuple[int, int]]:
+        return [
+            (column, row)
+            for row in range(self.height)
+            for column in range(self.width)
+            if self.grid[row][column] == MINE
+        ]
