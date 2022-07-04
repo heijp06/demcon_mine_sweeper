@@ -16,8 +16,8 @@ class Solver:
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
             self.sweep_middle_cell,
-            self.sweep_cells_for_which_all_mines_are_found,
-            self.mark_mines_if_sum_of_adjacent_mines_and_unknowns_equals_cell_value,
+            # self.sweep_cells_for_which_all_mines_are_found,
+            # self.mark_mines_if_sum_of_adjacent_mines_and_unknowns_equals_cell_value,
             self.try_all_configurations_of_mines_around_cell
         ]
 
