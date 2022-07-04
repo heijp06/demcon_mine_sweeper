@@ -17,9 +17,9 @@ def print_grid(grid: list[list[int]]) -> None:
         print()
 
 
-solver = Solver(**mf.BEGINNER_FIELD)
+# solver = Solver(**mf.BEGINNER_FIELD)
 # solver = Solver(**mf.INTERMEDIATE_FIELD)
-# solver = Solver(**mf.EXPERT_FIELD)
+solver = Solver(**mf.EXPERT_FIELD)
 print(f"MineSweeper: {solver.width} columns, {solver.height} rows, {solver.number_of_mines} mines")
 print_grid(solver.grid)
 
