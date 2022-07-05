@@ -16,8 +16,6 @@ class Solver:
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
             self.sweep_middle_cell,
-            # self.sweep_cells_for_which_all_mines_are_found,
-            # self.mark_mines_if_sum_of_adjacent_mines_and_unknowns_equals_cell_value,
             self.try_all_configurations_of_mines_around_cell
         ]
 
@@ -27,20 +25,6 @@ class Solver:
             if result:
                 return result
 
-    def sweep_cells_for_which_all_mines_are_found(self) -> Optional[str]:
-        for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
-            if self.grid[row][column] in (UNKNOWN, MINE):
-                continue
-            unknowns = self.get_adjacent_cells(row, column, UNKNOWN)
-            if not unknowns:
-                continue
-            mines = self.get_adjacent_cells(row, column, MINE)
-            if len(mines) == self.grid[row][column]:
-                for (c, r) in unknowns:
-                    self.grid[r][c] = self.mine_field.sweep_cell(c, r)
-                return f"Clear all cells around ({column}, {row}) because all the mines there are found."
-        return None
-
     def sweep_middle_cell(self) -> Optional[str]:
         column, row = (self.width - 1) // 2, (self.height - 1) // 2
         if self.grid[row][column] != UNKNOWN:
@@ -49,21 +33,6 @@ class Solver:
         self.grid[row][column] = mines
         plural = 's' if mines != 1 else ''
         return f"Sweep middle cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
-
-    def mark_mines_if_sum_of_adjacent_mines_and_unknowns_equals_cell_value(self) -> Optional[str]:
-        for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
-            cell_value = self.grid[row][column]
-            if cell_value in (UNKNOWN, MINE):
-                continue
-            unknowns = self.get_adjacent_cells(row, column, UNKNOWN)
-            if not unknowns:
-                continue
-            mines = self.get_adjacent_cells(row, column, MINE)
-            if len(unknowns) + len(mines) == cell_value:
-                for c, r in unknowns:
-                    self.grid[r][c] = MINE
-                return f"Mark all unknown cells around ({column}, {row}) as mine to get to a total of {cell_value}."
-        return None
 
     def try_all_configurations_of_mines_around_cell(self) -> Optional[str]:
         for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
