@@ -1,4 +1,5 @@
 from itertools import combinations
+import random
 from typing import Optional
 import mineField as mf
 
@@ -16,7 +17,8 @@ class Solver:
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
             self.sweep_middle_cell,
-            self.try_all_configurations_of_mines_around_cell
+            self.try_all_configurations_of_mines_around_cell,
+            self.sweep_random_cell
         ]
 
     def sweep(self) -> str:
@@ -76,6 +78,17 @@ class Solver:
                     self.grid[r][c] = self.mine_field.sweep_cell(c, r)
                 return f"Around ({column, row}) mark mines at {mines} and clear {cleared}."
         return None
+
+    def sweep_random_cell(self):
+        column, row = random.choice([
+            (c, r)
+            for c in range(self.width)
+            for r in range(self.height)
+            if self.grid[r][c] == UNKNOWN
+        ])
+        self.grid[row][column] = self.mine_field.sweep_cell(column, row)
+        return f"Choose random cell ({column}, {row})."
+
 
     def get_adjacent_cells(self, row, column, cell_type=None) -> list[tuple[int, int]]:
         return [

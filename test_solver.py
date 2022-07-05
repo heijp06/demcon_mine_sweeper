@@ -1,4 +1,5 @@
 from decimal import MIN_EMIN
+from venv import create
 import pytest
 from unittest.mock import call, MagicMock
 from mineField import MineField
@@ -38,6 +39,18 @@ def test_try_all_configurations_of_mines_around_cell(grid, number_of_mines, mine
         assert grid[row][column] == MINE
     for column, row in cleared:
         assert grid[row][column] not in (MINE, UNKNOWN)
+
+
+@pytest.mark.parametrize("grid,number_of_mines,candidates", [
+    ([
+        [1, UNKNOWN],
+        [UNKNOWN, UNKNOWN]], 1, [(1, 0), (0, 1), (1, 1)]),
+])
+def test_sweep_random_cell(grid, number_of_mines, candidates):
+    solver = create_solver(grid, number_of_mines)
+    solver.sweep_random_cell()
+    solver.mine_field.sweep_cell.assert_called_once()
+    assert solver.mine_field.sweep_cell.call_args.args in candidates
 
 
 def assert_cells_swept(solver: Solver, cells: list[tuple[int, int]]) -> None:
