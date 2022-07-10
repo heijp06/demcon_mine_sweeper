@@ -51,6 +51,23 @@ class Solver:
         self.grid[row][column] = mines
         plural = 's' if mines != 1 else ''
         return f"Sweep corner cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
+    
+    def sweep_constraint(self) -> Optional[str]:
+        if not self.active_cells:
+            return None
+        problem = c.Problem()
+        all_variables = set()
+        for column, row in self.active_cells:
+            value = self.grid[row][column]
+            if value in (UNKNOWN, MINE):
+                continue
+            variables = self.get_adjacent_cells(column, row, is_unknown)
+            number_of_mines = len(self.get_adjacent_cells(column, row, is_mine))
+            problem.addConstraint(c.ExactSumConstraint(value - number_of_mines), variables)
+            all_variables = all_variables.union(variables)
+        problem.addVariables(all_variables, [0, 1])
+        solutions = problem.getSolutions()
+        print(solutions)
 
     def try_all_configurations_of_mines_around_cell(self) -> Optional[str]:
         for (column, row) in self.active_cells:
