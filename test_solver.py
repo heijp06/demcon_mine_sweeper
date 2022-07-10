@@ -70,6 +70,5 @@ def create_solver(grid: list[list[int]], number_of_mines: int) -> None:
         for row in range(solver.height):
             if solver.grid[row][column] == UNKNOWN:
                 continue
-            solver.active_cells.add((column, row))
-            solver.active_cells = solver.active_cells.union(solver.get_adjacent_cells(column, row))
+            solver.add_active_cells_at(column, row)
     return solver
