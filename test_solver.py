@@ -66,4 +66,10 @@ def create_solver(grid: list[list[int]], number_of_mines: int) -> None:
     solver = Solver(width, height, number_of_mines)
     solver.mine_field = MagicMock(spec=MineField)
     solver.grid = grid
+    for column in range(solver.width):
+        for row in range(solver.height):
+            if solver.grid[row][column] == UNKNOWN:
+                continue
+            solver.active_cells.add((column, row))
+            solver.active_cells = solver.active_cells.union(solver.get_adjacent_cells(column, row))
     return solver

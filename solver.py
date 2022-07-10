@@ -2,6 +2,7 @@ from itertools import combinations
 import random
 from typing import Optional
 import mineField as mf
+import constraint as c
 
 UNKNOWN = -1
 MINE = -2
@@ -20,6 +21,7 @@ class Solver:
             self.sweep_corner_cell,
             self.sweep_random_cell
         ]
+        self.active_cells: set[tuple[int, int]] = set()
 
     def sweep(self) -> str:
         for sweeper in self._sweepers:
@@ -29,32 +31,34 @@ class Solver:
 
     def sweep_corner_cell(self) -> Optional[str]:
         column, row = next((
-                (c, r)
-                for (c, r)
-                in ((0, 0), (0, self.height - 1), (self.width - 1, 0))
-                if self.grid[r][c] == UNKNOWN), (self.width - 1, self.height - 1))
+            (c, r)
+            for (c, r)
+            in ((0, 0), (0, self.height - 1), (self.width - 1, 0))
+            if self.grid[r][c] == UNKNOWN), (self.width - 1, self.height - 1))
         if self.grid[row][column] != UNKNOWN:
             return None
+        self.active_cells.add((column, row))
+        self.active_cells = self.active_cells.union((self.get_adjacent_cells(column, row)))
         mines = self.mine_field.sweep_cell(column, row)
         self.grid[row][column] = mines
         plural = 's' if mines != 1 else ''
         return f"Sweep corner cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
 
     def try_all_configurations_of_mines_around_cell(self) -> Optional[str]:
-        for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
+        for (column, row) in self.active_cells:
             cell_value = self.grid[row][column]
             if cell_value in (UNKNOWN, MINE):
                 continue
-            unknowns = set(self.get_adjacent_cells(row, column, UNKNOWN))
+            unknowns = set(self.get_adjacent_cells(column, row, UNKNOWN))
             if not unknowns:
                 continue
             cells_to_check = [
                 (c, r)
                 for (c, r)
-                in self.get_adjacent_cells(row, column)
+                in self.get_adjacent_cells(column, row)
                 if self.grid[r][c] not in [MINE, UNKNOWN]
             ]
-            number_of_mines = len(self.get_adjacent_cells(row, column, MINE))
+            number_of_mines = len(self.get_adjacent_cells(column, row, MINE))
             mines_to_add = cell_value - number_of_mines
             cleared = set(unknowns)
             mines = set(unknowns)
@@ -77,8 +81,12 @@ class Solver:
                         break
             if mines or cleared:
                 for c, r in mines:
+                    self.active_cells.add((c, r))
+                    self.active_cells = self.active_cells.union((self.get_adjacent_cells(c, r)))
                     self.grid[r][c] = MINE
                 for c, r in cleared:
+                    self.active_cells.add((c, r))
+                    self.active_cells = self.active_cells.union((self.get_adjacent_cells(c, r)))
                     self.grid[r][c] = self.mine_field.sweep_cell(c, r)
                 return f"Around ({column, row}) mark mines at {mines} and clear {cleared}."
         return None
@@ -90,11 +98,12 @@ class Solver:
             for r in range(self.height)
             if self.grid[r][c] == UNKNOWN
         ])
+        self.active_cells.add((column, row))
+        self.active_cells = self.active_cells.union((self.get_adjacent_cells(column, row)))
         self.grid[row][column] = self.mine_field.sweep_cell(column, row)
         return f"Choose random cell ({column}, {row})."
 
-
-    def get_adjacent_cells(self, row, column, cell_type=None) -> list[tuple[int, int]]:
+    def get_adjacent_cells(self, column, row, cell_type=None) -> list[tuple[int, int]]:
         return [
             (column + dc, row + dr)
             for dr in [-1, 0, 1]
@@ -117,6 +126,6 @@ class Solver:
         cell_value = self.grid[row][column]
         if cell_value in (MINE, UNKNOWN):
             return True
-        number_of_mines = len(self.get_adjacent_cells(row, column, MINE))
-        number_of_unknowns = len(self.get_adjacent_cells(row, column, UNKNOWN))
+        number_of_mines = len(self.get_adjacent_cells(column, row, MINE))
+        number_of_unknowns = len(self.get_adjacent_cells(column, row, UNKNOWN))
         return number_of_mines <= cell_value <= number_of_mines + number_of_unknowns
