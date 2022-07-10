@@ -1,20 +1,21 @@
+from collections import defaultdict
 from itertools import combinations
 import random
-from typing import Optional
+from typing import Counter, Optional
 import mineField as mf
 import constraint as c
 
 UNKNOWN = -1
 MINE = -2
 
+
 def is_mine(value: int) -> bool:
     return value == MINE
+
 
 def is_unknown(value: int) -> bool:
     return value == UNKNOWN
 
-def is_cleared(value: int) -> bool:
-    return value not in (MINE, UNKNOWN)
 
 class Solver:
     def __init__(self, width: int, height: int, number_of_mines: int) -> None:
@@ -25,7 +26,8 @@ class Solver:
             **{'width': width, 'height': height, 'number_of_mines': number_of_mines})
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
-            self.try_all_configurations_of_mines_around_cell,
+            # self.try_all_configurations_of_mines_around_cell,
+            self.sweep_constraint,
             self.sweep_corner_cell,
             self.sweep_random_cell
         ]
@@ -36,6 +38,7 @@ class Solver:
             result = sweeper()
             if result:
                 self.prune_active_cells()
+                print(self.active_cells)
                 return result
 
     def sweep_corner_cell(self) -> Optional[str]:
@@ -51,7 +54,7 @@ class Solver:
         self.grid[row][column] = mines
         plural = 's' if mines != 1 else ''
         return f"Sweep corner cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
-    
+
     def sweep_constraint(self) -> Optional[str]:
         if not self.active_cells:
             return None
@@ -62,12 +65,31 @@ class Solver:
             if value in (UNKNOWN, MINE):
                 continue
             variables = self.get_adjacent_cells(column, row, is_unknown)
-            number_of_mines = len(self.get_adjacent_cells(column, row, is_mine))
-            problem.addConstraint(c.ExactSumConstraint(value - number_of_mines), variables)
+            number_of_mines = len(
+                self.get_adjacent_cells(column, row, is_mine))
+            problem.addConstraint(c.ExactSumConstraint(
+                value - number_of_mines), variables)
             all_variables = all_variables.union(variables)
         problem.addVariables(all_variables, [0, 1])
         solutions = problem.getSolutions()
-        print(solutions)
+        counts = defaultdict(Counter)
+        for cell, value in [pair for solution in solutions for pair in solution.items()]:
+            counts[cell].update([value])
+        cells_with_mines = []
+        cells_without_mines = []
+        for (column, row), values in counts.items():
+            if len(values) == 1:
+                self.add_active_cells_at(column, row)
+                if 0 in values:
+                    cells_without_mines.append((column, row))
+                    self.grid[row][column] = self.mine_field.sweep_cell(column, row)
+                else:
+                    cells_with_mines.append((column, row))
+                    self.grid[row][column] = MINE
+        if not cells_with_mines and not cells_without_mines:
+            return None
+        return f"Mines at: {cells_with_mines}, no mines at: {cells_without_mines}"
+
 
     def try_all_configurations_of_mines_around_cell(self) -> Optional[str]:
         for (column, row) in self.active_cells:
@@ -83,7 +105,8 @@ class Solver:
                 in self.get_adjacent_cells(column, row)
                 if self.grid[r][c] not in [MINE, UNKNOWN]
             ]
-            number_of_mines = len(self.get_adjacent_cells(column, row, is_mine))
+            number_of_mines = len(
+                self.get_adjacent_cells(column, row, is_mine))
             mines_to_add = cell_value - number_of_mines
             cleared = set(unknowns)
             mines = set(unknowns)
@@ -127,7 +150,8 @@ class Solver:
 
     def add_active_cells_at(self, column, row):
         self.active_cells.add((column, row))
-        self.active_cells = self.active_cells.union(self.get_adjacent_cells(column, row))
+        self.active_cells = self.active_cells.union(
+            self.get_adjacent_cells(column, row))
 
     def get_adjacent_cells(self, column, row, cell_selector=None) -> list[tuple[int, int]]:
         cell_selector = cell_selector or (lambda _: True)
@@ -140,13 +164,13 @@ class Solver:
             and 0 <= column + dc < self.width
             and cell_selector(self.grid[row + dr][column + dc])
         ]
-    
+
     def prune_active_cells(self) -> None:
-        return set(
+        self.active_cells = set(
             (column, row)
             for (column, row)
             in self.active_cells
-            if not all(self.get_adjacent_cells(column, row, is_cleared))
+            if any(self.get_adjacent_cells(column, row, is_unknown))
         )
 
     def mines_found(self) -> list[tuple[int, int]]:
@@ -162,5 +186,6 @@ class Solver:
         if cell_value in (MINE, UNKNOWN):
             return True
         number_of_mines = len(self.get_adjacent_cells(column, row, is_mine))
-        number_of_unknowns = len(self.get_adjacent_cells(column, row, is_unknown))
+        number_of_unknowns = len(
+            self.get_adjacent_cells(column, row, is_unknown))
         return number_of_mines <= cell_value <= number_of_mines + number_of_unknowns

@@ -45,7 +45,7 @@ def test_try_all_configurations_of_mines_around_cell(grid, number_of_mines, mine
 @pytest.mark.parametrize("grid,number_of_mines,mines,cleared", [
     ([
         [1, 1, UNKNOWN],
-        [1, UNKNOWN, UNKNOWN]], 1, [(1, 1)], []),
+        [1, UNKNOWN, UNKNOWN]], 1, [(1, 1)], [(2, 0), (2, 1)]),
     ([
         [0, UNKNOWN, UNKNOWN],
         [UNKNOWN, UNKNOWN, UNKNOWN]], 1, [], [(1, 0), (0, 1), (1, 1)]),
@@ -60,6 +60,11 @@ def test_try_all_configurations_of_mines_around_cell(grid, number_of_mines, mine
         [1, UNKNOWN, UNKNOWN],
         [2, UNKNOWN, UNKNOWN],
         [1, UNKNOWN, UNKNOWN]], 3, [(1, 0), (1, 2)], [(1, 1)]),
+    ([
+        [0, 0, UNKNOWN, UNKNOWN],
+        [0, 0, UNKNOWN, UNKNOWN],
+        [UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN],
+        [UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN]], 1, [], [])
 ])
 def test_sweep_constraint(grid, number_of_mines, mines, cleared):
     solver = create_solver(grid, number_of_mines)
