@@ -6,11 +6,12 @@ from mineField import MineField
 from solver import MINE, UNKNOWN, Solver
 
 
-def test_sweep_middle_cell():
-    solver = Solver(3, 3, 1)
+def test_sweep_corner_cell():
+    solver = Solver(3, 4, 1)
     solver.mine_field = MagicMock(spec=MineField)
-    solver.sweep_middle_cell()
-    assert_cells_swept(solver, [(1, 1)])
+    for _ in range(4):
+        solver.sweep_corner_cell()
+    assert_cells_swept(solver, [(0, 0), (0, 3), (2, 0), (2, 3)])
 
 
 @pytest.mark.parametrize("grid,number_of_mines,mines,cleared", [

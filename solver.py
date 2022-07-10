@@ -16,8 +16,8 @@ class Solver:
             **{'width': width, 'height': height, 'number_of_mines': number_of_mines})
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
-            self.sweep_middle_cell,
             self.try_all_configurations_of_mines_around_cell,
+            self.sweep_corner_cell,
             self.sweep_random_cell
         ]
 
@@ -27,14 +27,18 @@ class Solver:
             if result:
                 return result
 
-    def sweep_middle_cell(self) -> Optional[str]:
-        column, row = (self.width - 1) // 2, (self.height - 1) // 2
+    def sweep_corner_cell(self) -> Optional[str]:
+        column, row = next((
+                (c, r)
+                for (c, r)
+                in ((0, 0), (0, self.height - 1), (self.width - 1, 0))
+                if self.grid[r][c] == UNKNOWN), (self.width - 1, self.height - 1))
         if self.grid[row][column] != UNKNOWN:
             return None
         mines = self.mine_field.sweep_cell(column, row)
         self.grid[row][column] = mines
         plural = 's' if mines != 1 else ''
-        return f"Sweep middle cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
+        return f"Sweep corner cell: ({column}, {row}) is surrounded by {mines} mine{plural}."
 
     def try_all_configurations_of_mines_around_cell(self) -> Optional[str]:
         for (row, column) in ((r, c) for r in range(self.height) for c in range(self.width)):
