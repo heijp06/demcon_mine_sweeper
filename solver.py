@@ -1,9 +1,14 @@
 from collections import defaultdict
+from functools import reduce
 from itertools import combinations
 import random
 from typing import Counter, Optional
+
+from numpy import var
 import mineField as mf
 import constraint as c
+
+from region import Region
 
 UNKNOWN = -1
 MINE = -2
@@ -38,7 +43,6 @@ class Solver:
             result = sweeper()
             if result:
                 self.prune_active_cells()
-                print(self.active_cells)
                 return result
 
     def sweep_corner_cell(self) -> Optional[str]:
@@ -58,34 +62,36 @@ class Solver:
     def sweep_constraint(self) -> Optional[str]:
         if not self.active_cells:
             return None
-        problem = c.Problem()
-        all_variables = set()
+        regions = []
         for column, row in self.active_cells:
             value = self.grid[row][column]
             if value in (UNKNOWN, MINE):
                 continue
-            variables = self.get_adjacent_cells(column, row, is_unknown)
+            cells = self.get_adjacent_cells(column, row, is_unknown)
             number_of_mines = len(
                 self.get_adjacent_cells(column, row, is_mine))
-            problem.addConstraint(c.ExactSumConstraint(
-                value - number_of_mines), variables)
-            all_variables = all_variables.union(variables)
-        problem.addVariables(all_variables, [0, 1])
-        solutions = problem.getSolutions()
-        counts = defaultdict(Counter)
-        for cell, value in [pair for solution in solutions for pair in solution.items()]:
-            counts[cell].update([value])
+            new_region = Region(cells, [(value - number_of_mines, cells)])
+            new_regions = []
+            for region in regions:
+                if any(cell in region for cell in cells):
+                    new_region |= region
+                else:
+                    new_regions.append(region)
+            new_regions.append(new_region)
+            regions = new_regions
         cells_with_mines = []
         cells_without_mines = []
-        for (column, row), values in counts.items():
-            if len(values) == 1:
-                self.add_active_cells_at(column, row)
-                if 0 in values:
-                    cells_without_mines.append((column, row))
-                    self.grid[row][column] = self.mine_field.sweep_cell(column, row)
-                else:
-                    cells_with_mines.append((column, row))
-                    self.grid[row][column] = MINE
+        for region in regions:
+            counts = region.get_cell_values()
+            for (column, row), values in counts.items():
+                if len(values) == 1:
+                    self.add_active_cells_at(column, row)
+                    if 0 in values:
+                        cells_without_mines.append((column, row))
+                        self.grid[row][column] = self.mine_field.sweep_cell(column, row)
+                    else:
+                        cells_with_mines.append((column, row))
+                        self.grid[row][column] = MINE
         if not cells_with_mines and not cells_without_mines:
             return None
         return f"Mines at: {cells_with_mines}, no mines at: {cells_without_mines}"
