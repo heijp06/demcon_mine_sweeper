@@ -1,12 +1,7 @@
-from collections import defaultdict
-from functools import reduce
-from itertools import combinations
 import random
-from typing import Counter, Optional
+from typing import Optional
 
-from numpy import var
 import mineField as mf
-import constraint as c
 
 from region import Region
 
@@ -31,7 +26,6 @@ class Solver:
             **{'width': width, 'height': height, 'number_of_mines': number_of_mines})
         self.grid = [[UNKNOWN] * self.width for _ in range(self.height)]
         self._sweepers = [
-            # self.try_all_configurations_of_mines_around_cell,
             self.sweep_constraint,
             self.sweep_corner_cell,
             self.sweep_random_cell
@@ -88,60 +82,14 @@ class Solver:
                     self.add_active_cells_at(column, row)
                     if 0 in values:
                         cells_without_mines.append((column, row))
-                        self.grid[row][column] = self.mine_field.sweep_cell(column, row)
+                        self.grid[row][column] = self.mine_field.sweep_cell(
+                            column, row)
                     else:
                         cells_with_mines.append((column, row))
                         self.grid[row][column] = MINE
         if not cells_with_mines and not cells_without_mines:
             return None
         return f"Mines at: {cells_with_mines}, no mines at: {cells_without_mines}"
-
-
-    def try_all_configurations_of_mines_around_cell(self) -> Optional[str]:
-        for (column, row) in self.active_cells:
-            cell_value = self.grid[row][column]
-            if cell_value in (UNKNOWN, MINE):
-                continue
-            unknowns = set(self.get_adjacent_cells(column, row, is_unknown))
-            if not unknowns:
-                continue
-            cells_to_check = [
-                (c, r)
-                for (c, r)
-                in self.get_adjacent_cells(column, row)
-                if self.grid[r][c] not in [MINE, UNKNOWN]
-            ]
-            number_of_mines = len(
-                self.get_adjacent_cells(column, row, is_mine))
-            mines_to_add = cell_value - number_of_mines
-            cleared = set(unknowns)
-            mines = set(unknowns)
-            for choice in combinations(unknowns, mines_to_add):
-                for c, r in unknowns:
-                    self.grid[r][c] = 0
-                for c, r in choice:
-                    self.grid[r][c] = MINE
-                valid = True
-                for c, r in cells_to_check:
-                    if not self.cell_is_valid(r, c):
-                        valid = False
-                        break
-                for c, r in unknowns:
-                    self.grid[r][c] = UNKNOWN
-                if valid:
-                    mines = mines.intersection(choice)
-                    cleared = cleared.intersection(unknowns.difference(choice))
-                    if not mines and not cleared:
-                        break
-            if mines or cleared:
-                for c, r in mines:
-                    self.add_active_cells_at(c, r)
-                    self.grid[r][c] = MINE
-                for c, r in cleared:
-                    self.add_active_cells_at(c, r)
-                    self.grid[r][c] = self.mine_field.sweep_cell(c, r)
-                return f"Around ({column, row}) mark mines at {mines} and clear {cleared}."
-        return None
 
     def sweep_random_cell(self):
         column, row = random.choice([
@@ -186,12 +134,3 @@ class Solver:
             for column in range(self.width)
             if self.grid[row][column] == MINE
         ]
-
-    def cell_is_valid(self, row, column) -> bool:
-        cell_value = self.grid[row][column]
-        if cell_value in (MINE, UNKNOWN):
-            return True
-        number_of_mines = len(self.get_adjacent_cells(column, row, is_mine))
-        number_of_unknowns = len(
-            self.get_adjacent_cells(column, row, is_unknown))
-        return number_of_mines <= cell_value <= number_of_mines + number_of_unknowns
