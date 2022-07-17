@@ -21,7 +21,10 @@ class Region:
             problem.addConstraint(c.ExactSumConstraint(value), cells)
         problem.addVariables(self.cells, [0, 1])
         solutions = problem.getSolutions()
-        counts = defaultdict(Counter)
+        counts_per_cell = defaultdict(Counter)
         for cell, value in [pair for solution in solutions for pair in solution.items()]:
-            counts[cell].update([value])
-        return counts
+            counts_per_cell[cell].update([value])
+        return {
+            cell: counts.get(1, 0.0) / (counts.get(0, 0.0) + counts.get(1, 0.0))
+            for cell, counts in counts_per_cell.items()
+        }

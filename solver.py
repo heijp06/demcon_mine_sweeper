@@ -77,19 +77,20 @@ class Solver:
         cells_without_mines = []
         for region in regions:
             counts = region.get_cell_values()
-            for (column, row), values in counts.items():
-                if len(values) == 1:
+            for (column, row), chance in counts.items():
+                if chance == 0.0:
                     self.add_active_cells_at(column, row)
-                    if 0 in values:
-                        cells_without_mines.append((column, row))
-                        self.grid[row][column] = self.mine_field.sweep_cell(
-                            column, row)
-                    else:
-                        cells_with_mines.append((column, row))
-                        self.grid[row][column] = MINE
-        if not cells_with_mines and not cells_without_mines:
-            return None
-        return f"Mines at: {cells_with_mines}, no mines at: {cells_without_mines}"
+                    cells_without_mines.append((column, row))
+                    self.grid[row][column] = self.mine_field.sweep_cell(
+                        column, row)
+                if chance == 1.0:
+                    self.add_active_cells_at(column, row)
+                    self.add_active_cells_at(column, row)
+                    cells_with_mines.append((column, row))
+                    self.grid[row][column] = MINE
+        if cells_with_mines or cells_without_mines:
+            return f"Mines at: {cells_with_mines}, no mines at: {cells_without_mines}"
+        return None
 
     def sweep_random_cell(self):
         column, row = random.choice([
