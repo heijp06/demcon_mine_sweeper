@@ -18,7 +18,7 @@ def is_unknown(value: int) -> bool:
 
 
 class Solver:
-    def __init__(self, width: int, height: int, number_of_mines: int, use_total_rule: bool = False) -> None:
+    def __init__(self, width: int, height: int, number_of_mines: int, use_total_rule: bool = True) -> None:
         self.width = width
         self.height = height
         self.number_of_mines = number_of_mines

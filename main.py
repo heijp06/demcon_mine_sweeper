@@ -42,7 +42,8 @@ def print_grid(grid: list[list[int]]) -> None:
 wins = 0
 games = 0
 for c in range(100):
-    print(f"{c} ")
+    # print(f"{c} ")
+    print(".", end=".", flush=True)
     games += 1
     solver = Solver(**mf.EXPERT_FIELD)
     result = solver.sweep()
@@ -55,4 +56,5 @@ for c in range(100):
         if len(mines) == solver.number_of_mines:
             wins += 1
             break
+print()
 print(f"{games} games played, {wins} won ({wins * 100 / games}%).")
