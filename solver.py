@@ -18,7 +18,7 @@ def is_unknown(value: int) -> bool:
 
 
 class Solver:
-    def __init__(self, width: int, height: int, number_of_mines: int) -> None:
+    def __init__(self, width: int, height: int, number_of_mines: int, use_total_rule: bool = False) -> None:
         self.width = width
         self.height = height
         self.number_of_mines = number_of_mines
@@ -31,6 +31,7 @@ class Solver:
             self.sweep_random_cell
         ]
         self.active_cells: set[tuple[int, int]] = set()
+        self.use_total_rule = use_total_rule
 
     def sweep(self) -> str:
         for sweeper in self._sweepers:
@@ -56,7 +57,7 @@ class Solver:
     def sweep_constraint(self) -> Optional[str]:
         if not self.active_cells:
             return None
-        regions = []
+        regions = self.get_regions()
         for column, row in self.active_cells:
             value = self.grid[row][column]
             if value in (UNKNOWN, MINE):
@@ -91,6 +92,22 @@ class Solver:
         if cells_with_mines or cells_without_mines:
             return f"Mines at: {cells_with_mines}, no mines at: {cells_without_mines}"
         return None
+
+    def get_regions(self):
+        if not self.use_total_rule:
+            return []
+        unknowns = [
+            (column, row)
+            for column in range(self.width)
+            for row in range(self.height)
+            if self.grid[row][column] == UNKNOWN
+        ]
+        if len(unknowns) > 20:
+            return []
+        for column, row in unknowns:
+            self.add_active_cells_at(column, row)
+        mines_found = len(self.mines_found())
+        return [Region(unknowns, [(self.number_of_mines - mines_found, unknowns)])]
 
     def sweep_random_cell(self):
         column, row = random.choice([
