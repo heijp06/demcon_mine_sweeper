@@ -27,8 +27,14 @@ result = solver.sweep()
 while result:
     print(result)
     print_grid(solver.grid)
-    result = solver.sweep()
+    try:
+        result = solver.sweep()
+    except mf.ExplosionException:
+        print(f"Mines found at {solver.mines_found()}")
+        print("Mine exploded!!!")
+        break
     mines = solver.mines_found()
     if len(mines) == solver.number_of_mines:
-        print(f"Solved, mines are at {mines}.")
+        print(f"Mines found at {solver.mines_found()}")
+        print(f"All mines found.")
         break
